@@ -2135,7 +2135,6 @@
 				2E898C4E1CC518180041CCD8 /* Sources */,
 				2E898CCA1CC518180041CCD8 /* Frameworks */,
 				2E898CDC1CC518180041CCD8 /* Resources */,
-				2E89E4351CC6218100C9EE93 /* [CP] Embed Pods Frameworks */,
 				4725309EF80D2315EB50E573 /* [CP] Embed Pods Frameworks */,
 				D801D965E628C76A96EAF7B6 /* [CP] Copy Pods Resources */,
 				5B056D1E2BDF7B73AB227580 /* Embed Pods Frameworks */,
@@ -2159,7 +2158,6 @@
 				2EADD7E51BE79D6D0051CD31 /* Sources */,
 				2EADD84D1BE79D6D0051CD31 /* Frameworks */,
 				2EADD8551BE79D6D0051CD31 /* Resources */,
-				1F2A45680D8F91AE446B1B42 /* [CP] Embed Pods Frameworks */,
 				25F251D912C22DDCD4AD9784 /* [CP] Copy Pods Resources */,
 				597D095728C0BDB14B419D31 /* Embed Pods Frameworks */,
 				2E9A772C1DA6838F00A50C4D /* Embed Frameworks */,
@@ -2307,28 +2305,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		1F2A45680D8F91AE446B1B42 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-KiteSDK-Demo/Pods-KiteSDK-Demo-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		25F251D912C22DDCD4AD9784 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-KiteSDK-Demo/Pods-KiteSDK-Demo-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-KiteSDK-Demo/Pods-KiteSDK-Demo-resources.sh",
 				"${PODS_ROOT}/FBSDKCoreKit/FacebookSDKStrings.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Stripe/Stripe.bundle",
 			);
@@ -2339,7 +2322,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-KiteSDK-Demo/Pods-KiteSDK-Demo-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-KiteSDK-Demo/Pods-KiteSDK-Demo-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		2E4CAF0C1BC25F120089FA26 /* ShellScript */ = {
@@ -2354,20 +2337,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PROJECT_DIR}/docs/appledoc/appledoc\" \\\n--templates \"${PROJECT_DIR}/docs/appledoc/Templates\" \\\n--project-name \"${PROJECT_NAME}\" \\\n--project-company \"Kite.ly\" \\\n--company-id \"ly.kite\" \\\n--output \"${PROJECT_DIR}/docs/appledoc/${PROJECT_NAME}-appledocs\" \\\n--install-docset \\\n--logformat xcode \\\n--keep-intermediate-files \\\n--no-repeat-first-par \\\n--no-warn-invalid-crossref \\\n--merge-categories \\\n--exit-threshold 2 \\\n--docset-platform-family iphoneos \\\n--warn-undocumented-member \\\n--warn-missing-arg \\\n--warn-unknown-directive \\\n--warn-empty-description \\\n--warn-undocumented-object \\\n--warn-missing-company-id \\\n--keep-undocumented-objects \\\n--keep-undocumented-members \\\n--ignore \"*.m\" \\\n--index-desc \"${PROJECT_DIR}/docs/appledoc-intro.md\" \\\n\"${PROJECT_DIR}/PSPrintSDK/OLAsset.h\" \"${PROJECT_DIR}/PSPrintSDK/OLKiteViewController.h\" \"${PROJECT_DIR}/PSPrintSDK/OLKitePrintSDK.h\" \"${PROJECT_DIR}/PSPrintSDK/OLPrintJob.h\" \"${PROJECT_DIR}/PSPrintSDK/OLPrintOrder.h\" \"${PROJECT_DIR}/PSPrintSDK/OLAssetUploadRequest.h\"\n";
-		};
-		2E89E4351CC6218100C9EE93 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Kite-CI-Deploy/Pods-Kite-CI-Deploy-frameworks.sh\"\n";
 		};
 		2E8CAA221E44E729000E6FD2 /* Generate Localization Files */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2483,7 +2452,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-Kite-CI-Deploy/Pods-Kite-CI-Deploy-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-Kite-CI-Deploy/Pods-Kite-CI-Deploy-resources.sh",
 				"${PODS_ROOT}/FBSDKCoreKit/FacebookSDKStrings.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Stripe/Stripe.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/KITAssetsPickerController/KITAssetsPickerController.bundle",
@@ -2496,7 +2465,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Kite-CI-Deploy/Pods-Kite-CI-Deploy-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Kite-CI-Deploy/Pods-Kite-CI-Deploy-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
