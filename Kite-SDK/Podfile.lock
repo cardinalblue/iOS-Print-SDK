@@ -18,18 +18,27 @@ PODS:
 DEPENDENCIES:
   - FBSDKCoreKit (~> 4.27.1)
   - FBSDKLoginKit (~> 4.27.1)
-  - KITAssetsPickerController (from `git@github.com:kkarayannis/KITAssetsPickerController.git`)
+  - "KITAssetsPickerController (from `git@github.com:kkarayannis/KITAssetsPickerController.git`)"
   - PayPal-iOS-SDK/Core (~> 2.18.0)
   - Stripe (~> 10.1.0)
 
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - Bolts
+    - FBSDKCoreKit
+    - FBSDKLoginKit
+    - PayPal-iOS-SDK
+    - PureLayout
+    - Stripe
+
 EXTERNAL SOURCES:
   KITAssetsPickerController:
-    :git: git@github.com:kkarayannis/KITAssetsPickerController.git
+    :git: "git@github.com:kkarayannis/KITAssetsPickerController.git"
 
 CHECKOUT OPTIONS:
   KITAssetsPickerController:
     :commit: b08f373301d1a3c17c09104a5577d61a1255ba8c
-    :git: git@github.com:kkarayannis/KITAssetsPickerController.git
+    :git: "git@github.com:kkarayannis/KITAssetsPickerController.git"
 
 SPEC CHECKSUMS:
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
@@ -40,6 +49,6 @@ SPEC CHECKSUMS:
   PureLayout: 4d550abe49a94f24c2808b9b95db9131685fe4cd
   Stripe: 1c7aa951a075cced500a919d92b687b35d410705
 
-PODFILE CHECKSUM: 8a1459d72dc010b02ad5b70c72a501fe491ec9f1
+PODFILE CHECKSUM: 58774c25bb321ab3c908a1374e749c45b9ec7904
 
-COCOAPODS: 1.4.0
+COCOAPODS: 1.6.1
