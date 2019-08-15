@@ -2,10 +2,8 @@
 
 ![Kite](Kite-SDK/docs/kite.png)
 
-[![codecov](https://codecov.io/gh/OceanLabs/iOS-Print-SDK/branch/master/graph/badge.svg)](https://codecov.io/gh/OceanLabs/iOS-Print-SDK)
 ![Platform](https://img.shields.io/badge/platform-iOS-lightgrey.svg)
-![CocoaPods Compatible](https://img.shields.io/cocoapods/v/Kite-Print-SDK.svg)
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+![Cocoapods](https://img.shields.io/cocoapods/v/Kite-Print-SDK.svg)
 [![Twitter](https://img.shields.io/badge/twitter-@kite_ly-yellow.svg?style=flat)](http://twitter.com/kite_ly)
 
 The Kite SDK makes it easy to add print on demand functionality to your app.
@@ -28,6 +26,7 @@ Use our SDK to unlock hidden revenue streams and add value for your users. *In u
 - Square and Round Stickers
 - T-Shirts & other Apparel
 - Phone Cases
+- Photo books
 - New products being added monthly
 
 ## Features
@@ -36,22 +35,19 @@ Use our SDK to unlock hidden revenue streams and add value for your users. *In u
 - Revenue & order volume analytics available in the web dashboard
 - Review, refund or reprint any order within the web dashboard
 - Localized currency support
-- Worldwide address search & lookup
 - No server infrastructure required. We can handle everything for you from processing payments to printing & postage
 - Your branding not ours. You can create your own custom checkout & payment UI or customize ours
 
 ## Requirements
 
-* Xcode 8
-* iOS 8.0+ target deployment
+* Xcode 10.2
+* iOS 10.0+ target deployment
 
 ## Installation
 
-The recommended approach for installing is via the CocoaPods, however we also support Carthage and adding the SDK via git submodules.
-
 ### CocoaPods
 
-[CocoaPods](http://cocoapods.org) is a dependency manager for iOS, which automates and simplifies the process of using 3rd-party libraries like the Kite SDK in your projects. If you're using it just add the following to your Podfile:
+If you're using [CocoaPods](http://cocoapods.org) just add the following to your Podfile:
 
 ```ruby
 pod "Kite-Print-SDK"
@@ -61,8 +57,6 @@ pod 'PayPal-iOS-SDK/Core', '~> 2.18.0'
 #pod 'FBSDKCoreKit', '~> 4.27.1'
 #pod 'FBSDKLoginKit', '~> 4.27.1'
 
-#Uncomment the following line if you want Apple Pay support
-#pod 'Stripe', '~> 10.1.0'
 ```
 
 If you'd like to offer your users the opportunity to add photos via Instagram or Facebook then uncomment the appropriate lines above and follow the instructions to [Enable Facebook & Instagram Photo Selection](Kite-SDK/docs/social_photo_sources.md).
@@ -72,22 +66,6 @@ You can also provide your own photo source (for example from within your app or 
 PayPal functionality is also optional although recommended as you'll typically see a higher conversion rate with it.
 
 You can find example projects for [Swift](https://github.com/OceanLabs/Example-Kite-iOS-Cocoapods) and [Objective-C](https://github.com/OceanLabs/Example-Kite-iOS-Cocoapods-Objc).
-
-### Carthage
-[Carthage](https://github.com/Carthage/Carthage) is another dependency manager for iOS, which automates and simplifies the process of using 3rd-party libraries like the Kite SDK in your projects. If you're using it just add the following to your Cartfile:
-```ruby
-github "OceanLabs/iOS-Print-SDK"
-github "paypal/PayPal-iOS-SDK"
-
-#Uncomment the following line if you want Apple Pay support
-#github "stripe/stripe-ios" ~> 10.1.0
-```
-
-You can find an example project [here](https://github.com/OceanLabs/Example-Kite-iOS-Carthage)
-
-### Git submodules
-
-See our [Git submodule installation guide](Kite-SDK/docs/submodules.md)
 
 ### Quick Integration
 We really mean it when we say integration can be done in minutes.
@@ -105,17 +83,59 @@ import KiteSDK
 
 Objective-C:
 ```obj-c
-[OLKitePrintSDK setAPIKey:@"YOUR_API_KEY" withEnvironment:kOLKitePrintSDKEnvironmentLive]; //Or kOLKitePrintSDKEnvironmentSandbox for testing
+[OLKitePrintSDK setAPIKey:@"YOUR_API_KEY" withEnvironment:OLKitePrintSDKEnvironmentLive]; //Or OLKitePrintSDKEnvironmentSandbox for testing
 ```
 Swift:
 ```swift
-OLKitePrintSDK.setAPIKey("a45bf7f39523d31aa1ca4ecf64d422b4d810d9c4", with: .live) //Or .sandbox for testing
+OLKitePrintSDK.setAPIKey("YOUR_API_KEY", with: .live) //Or .sandbox for testing
 ```
-* **Step 3:** Create and present Kite:
+* **Step 3:** Set up 3D Secure 2 payments:
+
+Read about SCA (Strong Customer Authentication) requirements [here](https://stripe.com/gb/guides/strong-customer-authentication).
+
+Add a URL Scheme to your info.plist:
+```
+<key>CFBundleURLTypes</key>
+<array>
+	<dict>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>myappname123456</string>
+		</array>
+	</dict>
+</array>
+```
+
+Pass the URL Scheme you defined to the Kite SDK:
 
 Objective-C:
 ```obj-c
-OLKiteViewController *vc = [[OLKiteViewController alloc] initWithAssets:@[[OLAsset assetWithURL:[NSURL URLWithString:@"http://psps.s3.amazonaws.com/sdk_static/4.jpg"]]]];
+[OLKitePrintSDK setUrlScheme:@"myappname123456"];
+```
+Swift:
+```swift
+OLKitePrintSDK.urlScheme = "myappname123456"
+```
+
+Implement the following method in your app delegate:
+
+Objective-C
+```obj-c
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+	return [OLKitePrintSDK handleUrlCallBack:url];   
+}
+```
+Swift:
+```swift
+func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+   	return OLKitePrintSDK.handleUrlCallBack(with: url)
+}
+```
+* **Step 4:** Create and present Kite:
+
+Objective-C:
+```obj-c
+OLKiteViewController *vc = [[OLKiteViewController alloc] initWithAssets:@[[OLAsset assetWithURL:[NSURL URLWithString:@"https://psps.s3.amazonaws.com/sdk_static/4.jpg"]]]];
 [self presentViewController:vc animated:YES completion:NULL];
 ```
 Swift:
@@ -123,7 +143,7 @@ Swift:
 let kiteViewController = OLKiteViewController.init(assets: [OLAsset(url: URL(string: "http://psps.s3.amazonaws.com/sdk_static/4.jpg"))])
 present(kiteViewController!, animated: true, completion: nil)
 ```
-* **Step 4:**: 🎉Profit🎉
+* **Step 5:**: 🎉Profit🎉
 
 💰💵💶💷💴
 
@@ -177,10 +197,8 @@ To use our Print Shop experience:
 ### Custom User Experience
 You can build your own UI if you don't want to use or customize the provided Print Shop experience. You can still use the Print SDK to handle the print order creation and submission:
 
-1. [Create a print order](Kite-SDK/docs/create_print_order.md) representing the product(s) you wish to have printed and posted
-2. [Set the shipping address](Kite-SDK/docs/shipping.md) to which the order will be delivered
-3. [Take payment from the user](Kite-SDK/docs/payment.md) for the order and submit it to our servers for printing and posting
-4. [Register your payment details](https://www.kite.ly/accounts/billing/) with us so that we can pay you when your users place orders
+1. [Create print jobs](Kite-SDK/docs/create_print_jobs.md) representing the product(s) you wish to have printed and posted
+2. [Checkout](Kite-SDK/docs/entry_points.md#launching-directly-to-checkout) for the order and submit it to our servers for printing and posting
 
 ## Credentials & Environments
 Your mobile app integration requires different API Keys values for each environment: Live and Test (Sandbox).
@@ -202,10 +220,6 @@ Logging in to our [Developer Dashboard](https://www.kite.ly) allow's you to dyna
 ## ApplePay
 See our [ApplePay setup documentation](Kite-SDK/docs/applepay.md) if you want to enable checkout via ApplePay.
 
-## Push Notifications
-
-Push notifications are a powerful marketing tool that if used effectively can increase both user engagement and customer life time value by driving more sales within your application. Kite supports sending push notifications to your customers, see our [Push Notification setup documentation](Kite-SDK/docs/push_notifications.md).
-
 ## SDK Entry Points
 Depending on your use case you might want to launch to a specific product, or even bypass the product selection/creation process entirely and jump straight to the checkout/payment journey. See our [SDK entry point documentation](Kite-SDK/docs/entry_points.md) for more details.
 
@@ -219,8 +233,8 @@ Depending on your use case you might want to launch to a specific product, or ev
 ## Print API
 We also have a [REST print API](https://www.kite.ly/docs/1.1/) for those who prefer to invent wheels :)
 
-## Migration from Kite SDK v5.x.x
-We have made significant changes under the hood. Please see the [Migration Documentation](Kite-SDK/docs/migration.md) for any public-facing changes that might affect you.
+## Migration from older Kite SDK versions
+Please see the [Migration Documentation](Kite-SDK/docs/migration.md) to migrate to newer versions
 
 ## HP Print SDK
 You can optionally offer print-at-home functionality by enabling the HP Print SDK, which will integrate it nicely within the Kite SDK. Please see [here](Kite-SDK/docs/hp_sdk.md) for details. 
@@ -229,5 +243,4 @@ You can optionally offer print-at-home functionality by enabling the HP Print SD
 The iOS Print SDK uses software created by the Open Source community, you can find a full list of acknowledgements [here](https://kite.uservoice.com/knowledgebase/articles/1141681-open-source).
 
 ## License
-
 Kite iOS Print SDK is available under a modified MIT license. See the [LICENSE](Kite-SDK/LICENSE) file for more info.

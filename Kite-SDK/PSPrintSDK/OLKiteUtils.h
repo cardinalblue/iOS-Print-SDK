@@ -32,18 +32,12 @@
 @protocol OLKiteDelegate;
 @class OLProductHomeViewController;
 @class OLKiteViewController;
-@class OLPrintOrder;
 @class OLProduct;
-@class OLCheckoutViewController;
 
 @interface OLKiteUtils : NSObject
 
 + (NSBundle *)kiteLocalizationBundle;
 + (NSBundle *)kiteResourcesBundle;
-
-+ (NSString *)userEmail:(UIViewController *)topVC;
-
-+ (NSString *)userPhone:(UIViewController *)topVC;
 
 + (BOOL)assetArrayContainsPDF:(NSArray *)array;
 
@@ -52,18 +46,10 @@
 + (BOOL)facebookEnabled;
 + (BOOL)instagramEnabled;
 + (BOOL)qrCodeUploadEnabled;
-+ (NSArray<NSString *> *)supportedPKPaymentNetworks;
-+ (BOOL)isApplePayAvailable;
-+ (BOOL)isPayPalAvailable;
 + (BOOL)recentsAvailable;
 + (NSInteger)numberOfProvidersAvailable;
 
-
 + (UIFont *)fontWithName:(NSString *)name size:(CGFloat)size;
-
-+ (void)checkoutViewControllerForPrintOrder:(OLPrintOrder *)printOrder handler:(void(^)(id vc))handler;
-+ (void)shippingControllerForPrintOrder:(OLPrintOrder *)printOrder handler:(void(^)(OLCheckoutViewController *vc))handler;
-
 + (void)registerDefaultsWithURL:(NSURL *)url
                         success:(void (^)(NSDictionary *defaults))success
                         failure:(void (^)(NSError *error))failure;

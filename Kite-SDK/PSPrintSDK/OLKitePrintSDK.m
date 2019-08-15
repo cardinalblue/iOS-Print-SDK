@@ -28,73 +28,58 @@
 //
 
 #import "OLKitePrintSDK.h"
-#import "OLPayPalCard.h"
 #import "OLProductTemplate.h"
-#import "OLStripeCard.h"
 #import "OLKiteABTesting.h"
 #import "OLKiteUtils.h"
 #import "OLUserSession.h"
 
+@import Photobook;
+
 static NSString *apiKey = nil;
-static NSString *applePayMerchantID = nil;
-static NSString *applePayPayToString = nil;
 static OLKitePrintSDKEnvironment environment;
 
 static NSString *const kOLAPIEndpointLive = @"https://api.kite.ly";
 static NSString *const kOLAPIEndpointSandbox = @"https://api.kite.ly";
 static NSString *const kOLStagingEndpointLive = @"https://staging.kite.ly";
 static NSString *const kOLStagingEndpointSandbox = @"https://staging.kite.ly";
-static NSString *const kOLAPIEndpointVersion = @"v4.0";
+static NSString *const kOLAPIEndpointVersion = @"v4.1";
 
-static BOOL useStripeForCreditCards = YES;
 static BOOL useStaging = NO;
 static BOOL isUnitTesting = NO;
 static BOOL isKiosk = NO;
 static BOOL allowImageZooming = YES;
 
-static NSString *paypalAccountId = nil;
-static NSString *paypalPublicKey = nil;
-static NSString *stripeAccountId = nil;
-static NSString *stripePublicKey = nil;
-
 static NSString *instagramClientID = nil;
 static NSString *instagramSecret = nil;
 static NSString *instagramRedirectURI = nil;
 
-@interface OLPrintOrder ()
-- (void)saveOrder;
-@end
-
 @implementation OLKitePrintSDK
 
-+ (BOOL)useStripeForCreditCards {
-    return useStripeForCreditCards;
-}
-
-+ (void)setUseStripeForCreditCards:(BOOL)use {
-    useStripeForCreditCards = use;
-}
-
-+ (void)setUseStaging:(BOOL)staging{
++ (void)setUseStaging:(BOOL)staging {
     useStaging = staging;
+    [[PhotobookSDK shared] setShouldUseStaging:useStaging];
 }
 
-+ (void)setIsUnitTesting{
++ (void)setURLScheme:(NSString *_Nonnull)scheme {
+    [[PhotobookSDK shared] setKiteUrlScheme:scheme];
+}
+
++ (void)setIsUnitTesting {
     isUnitTesting = YES;
 }
 
-+ (BOOL)isUnitTesting{
++ (BOOL)isUnitTesting {
     return isUnitTesting;
 }
 
 + (void)setAPIKey:(NSString *_Nonnull)_apiKey withEnvironment:(OLKitePrintSDKEnvironment)_environment {
     apiKey = _apiKey;
     environment = _environment;
-    [OLStripeCard setClientId:[self stripePublishableKey]];
+    [[PhotobookSDK shared] setKiteApiKey:_apiKey];
     if (environment == OLKitePrintSDKEnvironmentLive) {
-        [OLPayPalCard setClientId:[self paypalClientId] withEnvironment:kOLPayPalEnvironmentLive];
+        [[PhotobookSDK shared] setEnvironment:EnvironmentLive];
     } else {
-        [OLPayPalCard setClientId:[self paypalClientId] withEnvironment:kOLPayPalEnvironmentSandbox];
+        [[PhotobookSDK shared] setEnvironment:EnvironmentTest];
     }
 }
 
@@ -107,7 +92,7 @@ static NSString *instagramRedirectURI = nil;
 }
 
 + (NSString *)apiEndpoint {
-    if (useStaging){
+    if (useStaging) {
         switch (environment) {
             case OLKitePrintSDKEnvironmentLive: return kOLStagingEndpointLive;
             case OLKitePrintSDKEnvironmentSandbox: return kOLStagingEndpointSandbox;
@@ -121,11 +106,11 @@ static NSString *instagramRedirectURI = nil;
     }
 }
 
-+ (NSString *)apiVersion{
++ (NSString *)apiVersion {
     return kOLAPIEndpointVersion;
 }
 
-+ (void) addPushDeviceToken:(NSData *)deviceToken{
++ (void)addPushDeviceToken:(NSData *)deviceToken {
     [OLAnalytics addPushDeviceToken:deviceToken];
 }
 
@@ -133,79 +118,88 @@ static NSString *instagramRedirectURI = nil;
     [OLAnalytics setOptInToRemoteAnalytics:optIn];
 }
 
-+ (NSString *_Nonnull)paypalEnvironment {
-    switch (environment) {
-        case OLKitePrintSDKEnvironmentLive: return @"live";/*PayPalEnvironmentProduction*/;
-        case OLKitePrintSDKEnvironmentSandbox: return @"sandbox";/*PayPalEnvironmentSandbox*/;
-    }
++ (void)setApplePayMerchantID:(NSString * _Nonnull)mID {
+    [[PhotobookSDK shared] setApplePayMerchantId:mID];
 }
 
-+ (NSString *_Nonnull)paypalClientId {
-    return paypalPublicKey;
++ (void)setApplePayPayToString:(NSString * _Nonnull)name {
+    [[PhotobookSDK shared] setApplePayPayTo:name];
 }
 
-+ (void)setApplePayMerchantID:(NSString *_Nonnull)mID{
-    applePayMerchantID = mID;
++ (BOOL)handleUrlCallBack:(NSURL * _Nonnull)url {
+    return [[PhotobookSDK shared] handleUrlCallBackWith:url];
 }
 
-+ (void)setApplePayPayToString:(NSString *_Nonnull)name{
-    applePayPayToString = name;
-}
-
-+ (NSString *)applePayPayToString{
-    if (applePayPayToString){
-        return applePayPayToString;
-    }
-    else{
-        NSDictionary *info = [[NSBundle mainBundle] infoDictionary];
-        NSString *bundleName = nil;
-        if ([info objectForKey:@"CFBundleDisplayName"] == nil) {
-            bundleName = [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *) kCFBundleNameKey];
-        } else {
-            bundleName = [NSString stringWithFormat:@"%@", [info objectForKey:@"CFBundleDisplayName"]];
-        }
-        
-        return [NSString stringWithFormat:@"Kite.ly (via %@)", bundleName];
-    }
-}
-
-+ (NSString *_Nonnull)appleMerchantID {
-    return applePayMerchantID;
-}
-
-+ (NSString *_Nonnull)stripePublishableKey {
-    return stripePublicKey;
-}
-
-+ (NSString *)qualityGuaranteeString{
++ (NSString *)qualityGuaranteeString {
     return NSLocalizedStringFromTableInBundle(@"**Quality Guarantee**\nOur products are of the highest quality and we’re confident you will love yours. If not, we offer a no quibble money back guarantee. Enjoy!", @"KitePrintSDK", [OLKiteUtils kiteLocalizationBundle], @"");
 }
 
-+ (void)setIsKiosk:(BOOL)enabled{
++ (void)setIsKiosk:(BOOL)enabled {
     isKiosk = enabled;
 }
 
-+ (BOOL)isKiosk{
++ (BOOL)isKiosk {
     return isKiosk;
 }
 
-+ (void)setQRCodeUploadEnabled:(BOOL)enabled{
++ (void)setPromoCode:(NSString *)promoCode {
+    [[PhotobookSDK shared] setPromoCode: promoCode];
 }
 
-+ (void)endCustomerSession{
++ (void)setDeliveryDetails:(OLDeliveryDetails *)deliveryDetails {
+    [[PhotobookSDK shared] setDeliveryDetails: deliveryDetails];
+}
+
++ (UIViewController *)checkoutViewControllerWithPrintJobs:(NSArray <id<OLPrintJob>>*_Nullable)printJobs {
+    return [self checkoutViewControllerWithPrintJobs:printJobs info:nil];
+}
+
++ (UIViewController *)checkoutViewControllerWithPrintJobs:(NSArray <id<OLPrintJob>>*_Nullable)printJobs info:(NSDictionary * _Nullable)info {
+    if ([[PhotobookSDK shared] isProcessingOrder]) {
+        return [[PhotobookSDK shared] receiptViewControllerWithEmbedInNavigation:YES dismissClosure:^(UIViewController *viewController, BOOL success) {
+            [viewController dismissViewControllerAnimated:YES completion:NULL];
+        }];
+    }
+    
+    [OLAnalytics setExtraInfo:info];
+    [OLAnalytics trackKiteViewControllerLoadedWithEntryPoint:@"Checkout"];
+    [[PhotobookSDK shared] clearBasketOrder];
+    for (id<OLPrintJob> printJob in printJobs) {
+        [[PhotobookSDK shared] addProductToBasket:(id<Product>)printJob];
+    }
+    
+    return (UINavigationController *)[[PhotobookSDK shared] checkoutViewControllerWithEmbedInNavigation:YES dismissClosure:^(UIViewController *viewController, BOOL success) {
+        if (![OLUserSession currentSession].kiteVc){
+            [viewController dismissViewControllerAnimated:YES completion:NULL];
+        }
+        else if ([viewController isKindOfClass:[NSClassFromString(@"Photobook.PhotobookViewController") class]]) {
+            [viewController.navigationController popViewControllerAnimated:YES];
+        } else {
+            [viewController.navigationController popToRootViewControllerAnimated:YES];
+        }
+    }];
+}
+
++ (BOOL)isProcessingOrder {
+    return [[PhotobookSDK shared] isProcessingOrder];
+}
+
++ (void)setQRCodeUploadEnabled:(BOOL)enabled {
+}
+
++ (void)endCustomerSession {
     [[OLUserSession currentSession] cleanupUserSession:OLUserSessionCleanupOptionAll];
 }
 
-+ (void)setAllowsImageZooming:(BOOL)allowZoom{
++ (void)setAllowsImageZooming:(BOOL)allowZoom {
     allowImageZooming = allowZoom;
 }
 
-+ (BOOL)allowsImageZooming{
++ (BOOL)allowsImageZooming {
     return allowImageZooming;
 }
 
 #pragma mark - Internal
-
 
 + (void)setInstagramEnabledWithClientID:(NSString *_Nonnull)clientID secret:(NSString *_Nonnull)secret redirectURI:(NSString *_Nonnull)redirectURI {
     instagramSecret = secret;
@@ -217,43 +211,12 @@ static NSString *instagramRedirectURI = nil;
     return instagramRedirectURI;
 }
 
-+ (NSString *)instagramSecret{
++ (NSString *)instagramSecret {
     return instagramSecret;
 }
 
-+ (NSString *)instagramClientID{
++ (NSString *)instagramClientID {
     return instagramClientID;
-}
-
-+ (void)setPayPalAccountId:(NSString *)accountId{
-    paypalAccountId = accountId;
-}
-
-+ (void)setPayPalPublicKey:(NSString *)publicKey{
-    paypalPublicKey = publicKey;
-    
-    if (environment == OLKitePrintSDKEnvironmentLive) {
-        [OLPayPalCard setClientId:[self paypalClientId] withEnvironment:kOLPayPalEnvironmentLive];
-    } else {
-        [OLPayPalCard setClientId:[self paypalClientId] withEnvironment:kOLPayPalEnvironmentSandbox];
-    }
-}
-
-+ (void)setStripeAccountId:(NSString *)accountId{
-    stripeAccountId = accountId;
-}
-
-+ (void)setStripePublicKey:(NSString *)publicKey{
-    stripePublicKey = publicKey;
-    [OLStripeCard setClientId:[self stripePublishableKey]];
-}
-
-+ (NSString *)paypalAccountId{
-    return paypalAccountId;
-}
-
-+ (NSString *)stripeAccountId{
-    return stripeAccountId;
 }
 
 @end

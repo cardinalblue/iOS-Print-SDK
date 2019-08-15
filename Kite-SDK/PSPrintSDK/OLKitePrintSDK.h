@@ -51,6 +51,15 @@
  */
 + (NSString *_Nullable)apiKey;
 
+
+/**
+ Sets up a URL scheme to be used for callbacks at checkout
+
+ @note Set a unique scheme for every single application in which the Kite SDK is used
+ @param scheme The scheme
+ */
++ (void)setURLScheme:(NSString *_Nonnull)scheme;
+
 /**
  *  The payment environment previously set
  *
@@ -67,6 +76,59 @@
  */
 + (void)addPushDeviceToken:(NSData *_Nonnull)deviceToken;
 
+/**
+ Call this method from your app delegate to handle the return from Safari as part of the credit card authorization process
+
+ @param url The return URL passed to the application
+ @return Yes if the URL should be handled by the SDK, no otherwise
+ */
++ (BOOL)handleUrlCallBack:(NSURL * _Nonnull)url;
+
+/**
+ *  Initializer that accepts a ready to checkout array of OLPrintJobs.
+ *  This will clear any existing basket items.
+ *
+ *  @param printJobs The printJobs to checkout
+ *
+ *  @return A checkout ViewController to present
+ */
++ (UIViewController * _Nullable)checkoutViewControllerWithPrintJobs:(NSArray <id<OLPrintJob>>*_Nullable)printJobs;
+
+/**
+ *  Initializer that accepts ready to checkout array of OLPrintJobs. Provides an extra argument for extra info.
+ *  Notes:
+ *  - This will clear any existing basket items.
+ *  - If there is a processing order in progress, the print jobs will be discarded in favor of the already processing order and the upload screen will be returned instead of the checkout screen, so you should be prepared for that. See isProcessingOrder.
+ *
+ *  @param printJobs  The printJobs to checkout
+ *  @param info       Extra information that could be useful for analytics
+ *
+ *  @return A checkout ViewController to present
+ */
++ (UIViewController * _Nullable)checkoutViewControllerWithPrintJobs:(NSArray <id<OLPrintJob>>*_Nullable)printJobs info:(NSDictionary * _Nullable)info;
+
+
+/**
+ Returns true if an order is in progress of submission. This is useful to know because in case this is true, if you try to checkout a print job, that print job will be discarded in favor of the already processing order and the upload screen will be returned instead of the checkout screen, so you should be prepared for that. If you present the normal flow Print Shop, the upload screen will be presented on top of that and everything will be handled internally. It might also be useful if you want to let the user know beforehand.
+
+ @return A bool value that indicates if an order is in progress of submission
+ */
++ (BOOL)isProcessingOrder;
+
+/**
+ Speed up checkout by prepopulating a promo code
+
+ @param promoCode A promo code. You can register codes in the Kite Dashboard
+ */
++ (void)setPromoCode:(NSString * _Nullable)promoCode;
+
+
+/**
+ Speed up checkout by prepopulating the user's delivery details
+
+ @param deliveryDetails The user's delivery details
+ */
++ (void)setDeliveryDetails:(OLDeliveryDetails * _Nonnull)deliveryDetails;
 
 /**
  Allow the SDK to track events in the SDK for analytics purposes. Default value is false
@@ -110,13 +172,6 @@
  *  Clear all customer data.
  */
 + (void)endCustomerSession;
-
-/**
- *  Enable ability to upload a photo from another device through the use of a QR code. Useful for kiosk apps. Default value is NO.
- *
- *  @param enabled BOOL values
- */
-+ (void)setQRCodeUploadEnabled:(BOOL)enabled __deprecated_msg("This method will no longer work. Use the OLKiteViewController property qrCodeUploadEnabled.");;
 
 /**
  *  Indicate that the app will be used in a kiosk environment

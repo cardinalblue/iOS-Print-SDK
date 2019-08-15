@@ -37,6 +37,8 @@ static NSString *const kAPIKeyLive = @"REPLACE_WITH_YOUR_API_KEY"; // replace wi
 static NSString *const kApplePayMerchantIDKey = @"merchant.ly.kite.sdk"; // Replace with your merchant ID
 static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your business name
 
+static NSString *const kURLScheme = @"kitely";
+
 #import "ViewController.h"
 #import "OLKitePrintSDK.h"
 #import "OLImageCachingManager.h"
@@ -47,7 +49,6 @@ static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your b
 
 @interface ViewController () <UINavigationControllerDelegate, OLKiteDelegate, OLImagePickerViewControllerDelegate>
 @property (nonatomic, weak) IBOutlet UISegmentedControl *environmentPicker;
-@property (nonatomic, strong) OLPrintOrder* printOrder;
 @end
 
 @interface OLKitePrintSDK (Private)
@@ -56,10 +57,6 @@ static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your b
 
 @implementation ViewController
 
-- (void)viewDidAppear:(BOOL)animated{
-    self.printOrder = [[OLPrintOrder alloc] init];
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -67,6 +64,7 @@ static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your b
     
     [OLKitePrintSDK setApplePayMerchantID:kApplePayMerchantIDKey];
     [OLKitePrintSDK setApplePayPayToString:kApplePayBusinessName];
+    [OLKitePrintSDK setURLScheme:kURLScheme];
 }
 
 - (BOOL)shouldAutorotate {
@@ -84,11 +82,6 @@ static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your b
     vc.delegate = self;
     [self presentViewController:[[UINavigationController alloc] initWithRootViewController:vc] animated:YES completion:NULL];
 }
-
-- (IBAction)onButtonPrintOrderHistory:(UIButton *)sender {
-    [self presentViewController:[OLKiteViewController orderHistoryViewController] animated:YES completion:NULL];
-}
-
 
 - (NSString *)apiKey {
     if ([self environment] == OLKitePrintSDKEnvironmentSandbox) {
@@ -137,28 +130,22 @@ static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your b
     }
     
     OLKiteViewController *vc = [[OLKiteViewController alloc] initWithAssets:assets];
-    vc.userEmail = @"";
-    vc.userPhone = @"";
     vc.delegate = self;
     
     [self addCatsAndDogsImagePickersToKite:vc];
     
+    vc.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:vc animated:YES completion:NULL];
-    
-    //Register for push notifications
-    NSUInteger types = (UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge);
-    [[UIApplication sharedApplication] registerUserNotificationSettings:
-     [UIUserNotificationSettings settingsForTypes:types categories:nil]];
-    [[UIApplication sharedApplication] registerForRemoteNotifications];
 }
 - (IBAction)onButtonPrintRemotePhotos:(id)sender {
     if (![self isAPIKeySet]) return;
     UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Remote URLS" message:@"Feel free to Change hardcoded remote image URLs in ViewController.m onButtonPrintRemotePhotos:" preferredStyle:UIAlertControllerStyleAlert];
     [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:^(id action){
-        NSArray *assets = @[[OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/1.jpg"]],
-                            [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/2.jpg"]],
-                            [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/3.jpg"]],
-                            [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/4.jpg"]]];
+        NSArray *assets = @[[OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/1.jpg"] size:CGSizeMake(1824,1216)],
+                            [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/2.jpg"] size: CGSizeMake(612, 612)],
+                            [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/3.jpg"] size: CGSizeMake(843, 960)],
+                            [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/4.jpg"] size: CGSizeMake(1034, 1034)],
+                            ];
         
         [self printWithAssets:assets];
     }]];
@@ -166,8 +153,8 @@ static NSString *const kApplePayBusinessName = @"Kite.ly"; //Replace with your b
 }
 
 - (void)addCatsAndDogsImagePickersToKite:(OLKiteViewController *)kvc{
-    OLImagePickerProviderCollection *dogsCollection = [[OLImagePickerProviderCollection alloc] initWithArray:@[[OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/5.jpg"]], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/6.jpg"]]] name:@"Dogs"];
-    OLImagePickerProviderCollection *catsCollection = [[OLImagePickerProviderCollection alloc] initWithArray:@[[OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/1.jpg"]], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/2.jpg"]], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/3.jpg"]], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/4.jpg"]]] name:@"Cats"];
+    OLImagePickerProviderCollection *dogsCollection = [[OLImagePickerProviderCollection alloc] initWithArray:@[[OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/5.jpg"] size: CGSizeMake(2048, 1362)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/6.jpg"] size: CGSizeMake(2048, 1152)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/7.jpg"] size: CGSizeMake(1600, 1144)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/8.jpg"] size: CGSizeMake(1882, 2509)]] name:@"Dogs"];
+    OLImagePickerProviderCollection *catsCollection = [[OLImagePickerProviderCollection alloc] initWithArray:@[[OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/1.jpg"] size:CGSizeMake(1824,1216)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/2.jpg"] size:CGSizeMake(612, 612)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/3.jpg"] size:CGSizeMake(843, 960)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/4.jpg"] size:CGSizeMake(1034, 1034)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/9.jpg"] size:CGSizeMake(3264, 2448)], [OLAsset assetWithURL:[NSURL URLWithString:@"https://s3.amazonaws.com/psps/sdk_static/10.jpg"] size:CGSizeMake(3456, 2592)]] name:@"Cats"];
     [kvc addCustomPhotoProviderWithCollections:@[catsCollection, dogsCollection] name:@"Pets" icon:[UIImage imageNamed:@"dog"]];
 }
 

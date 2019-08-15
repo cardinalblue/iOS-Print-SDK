@@ -30,7 +30,6 @@
 #import "OLImagePickerLoginPageViewController.h"
 #import "UIView+RoundRect.h"
 #import "OLImagePickerViewController.h"
-#import "OLOAuth2AccountStore.h"
 #import "OLKitePrintSDK.h"
 #import "OLInstagramLoginWebViewController.h"
 #import "OLNavigationController.h"
@@ -106,7 +105,7 @@
         }];
     }
     else if (self.provider.providerType == OLImagePickerProviderTypePhotoLibrary){
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString] options:@{} completionHandler:NULL];
     }
 }
 

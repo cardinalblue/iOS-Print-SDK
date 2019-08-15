@@ -43,28 +43,14 @@
 #import "OLKiteABTesting.h"
 #import "UIView+AutoLayoutHelper.h"
 #import "UIColor+OLHexString.h"
+#import "UIViewController+OLMethods.h"
 
 @interface OLProduct ()
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*declinedOffers;
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*acceptedOffers;
-@property (strong, nonatomic) OLUpsellOffer *redeemedOffer;
-- (BOOL)hasOfferIdBeenUsed:(NSUInteger)identifier;
 - (NSString *)currencyCode;
-@end
-
-@interface OLProductPrintJob ()
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*declinedOffers;
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*acceptedOffers;
-@property (strong, nonatomic) OLUpsellOffer *redeemedOffer;
-@end
-
-@interface OLPrintOrder ()
-- (void)saveOrder;
 @end
 
 @interface OLSingleProductReviewViewController (Private) <UITextFieldDelegate>
 
-- (BOOL)shouldDoCheckout;
 - (UIEdgeInsets)imageInsetsOnContainer;
 - (void)disableOverlay;
 - (void)doCheckout;
@@ -126,11 +112,7 @@
     [super viewDidLoad];
     
     self.printContainerView.backgroundColor = [self containerBackgroundColor];
-    
-    if ([self isUsingMultiplyBlend]){
-        [self.artboard.assetViews.firstObject setGesturesEnabled:NO];
-    }
-    
+
     if (self.product.productTemplate.fulfilmentItems.count > 1){
         self.artboard.backgroundColor = [UIColor clearColor];
         
@@ -310,6 +292,8 @@
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
     
+     [self addBasketIconToTopRight];
+    
     if (!self.downloadedMask && self.product.productTemplate.maskImageURL){
         UIImage *tempMask = [UIImage imageNamedInKiteBundle:@"dummy mask"];
         [self.artboard removeConstraint:self.aspectRatioConstraint];
@@ -344,11 +328,6 @@
     sender.enabled = NO;
     if ([OLAsset userSelectedAssets].nonPlaceholderAssets.count == 0 && !self.backAsset) {
         [self showHintViewForView:self.editingTools.button1 header:NSLocalizedStringFromTableInBundle(@"Let's pick\nan image!", @"KitePrintSDK", [OLKiteUtils kiteLocalizationBundle], @"Let's pick an image! The \n means there is a line break there. Please put it in the middle of the phrase, as best as you can. If one needs to be longer, it should be the first half.") body:NSLocalizedStringFromTableInBundle(@"Start by tapping this button", @"KitePrintSDK", [OLKiteUtils kiteLocalizationBundle], @"")delay:NO];
-        sender.enabled = YES;
-        return;
-    }
-    
-    if (![self shouldDoCheckout]){
         sender.enabled = YES;
         return;
     }
@@ -412,32 +391,14 @@
         return;
     }
     
-    BOOL fromEdit = NO;
     
-    OLPrintOrder *printOrder = [OLUserSession currentSession].printOrder;
     OLProductPrintJob *job = [[OLProductPrintJob alloc] initWithTemplateId:self.product.templateId OLAssets:@[asset]];
     for (NSString *option in self.product.selectedOptions.allKeys){
         [job setValue:self.product.selectedOptions[option] forOption:option];
     }
-    NSArray *jobs = [NSArray arrayWithArray:printOrder.jobs];
-    for (id<OLPrintJob> existingJob in jobs){
-        if ([existingJob.uuid isEqualToString:self.product.uuid]){
-            job.dateAddedToBasket = [existingJob dateAddedToBasket];
-            job.extraCopies = existingJob.extraCopies;
-            [printOrder removePrintJob:existingJob];
-            fromEdit = YES;
-        }
-    }
-    [job.acceptedOffers addObjectsFromArray:self.product.acceptedOffers.allObjects];
-    [job.declinedOffers addObjectsFromArray:self.product.declinedOffers.allObjects];
-    job.redeemedOffer = self.product.redeemedOffer;
-    [printOrder addPrintJob:job];
-    if (!fromEdit){
-        [OLAnalytics trackItemAddedToBasket:job];
-    }
     
-    [printOrder saveOrder];
-    
+    [[PhotobookSDK shared] addProductToBasket:job];
+        
     if (handler){
         handler();
     }
@@ -641,9 +602,6 @@
         }
     } completion:^(BOOL finished){
         [self renderImageWithCompletionHandler:NULL];
-        if ([self isUsingMultiplyBlend]){
-            [self.artboard.assetViews.firstObject setGesturesEnabled:NO];
-        }
     }];
 }
 
@@ -746,9 +704,7 @@
         self.hintView.alpha = 0;
     } completion:NULL];
     
-    [[NSOperationQueue mainQueue] addOperation:flipBlock];
-    
-    [OLAnalytics trackEditScreenButtonTapped:@"Product Flip"];
+    [[NSOperationQueue mainQueue] addOperation:flipBlock];    
 }
 
 
@@ -759,43 +715,17 @@
     [super doCheckout];
 }
 
-- (void)renderImageWithCompletionHandler:(void (^)(void))handler{
+- (void)renderImageWithCompletionHandler:(void (^)(void))handler {
     if (![self isUsingMultiplyBlend]  || self.maskActivityIndicator.isAnimating || [[[UIDevice currentDevice] systemVersion] floatValue] < 10 || self.presentedViewController){
-        if (handler){
-            handler();
-        }
+        if (handler) handler();
         return;
     }
-    
-    @autoreleasepool{
+
+    self.highlightsView.layer.compositingFilter = @"multiplyBlendMode";
+    [self.printContainerView insertSubview:self.highlightsView aboveSubview:self.artboard];
+    [self.highlightsView fillSuperView];
     self.highlightsView.hidden = NO;
-    self.renderedImageView.image = nil;
-    UIGraphicsBeginImageContextWithOptions(self.highlightsView.bounds.size, NO, [UIScreen mainScreen].scale);
-    [self.highlightsView drawViewHierarchyInRect:self.highlightsView.bounds afterScreenUpdates:YES];
-    UIImage *highlightsSnapshot = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    
-    UIGraphicsBeginImageContextWithOptions(self.printContainerView.bounds.size, NO, [UIScreen mainScreen].scale);
-    [self.printContainerView drawViewHierarchyInRect:self.printContainerView.bounds afterScreenUpdates:YES];
-    UIImage *productSnapshot = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    
-    CIImage *filterImage = [CIImage imageWithCGImage:productSnapshot.CGImage];
-    CIFilter *filter = [CIFilter filterWithName:@"CIMultiplyCompositing"];
-    [filter setValue:filterImage forKey:@"inputBackgroundImage"];
-    [filter setValue:[CIImage imageWithCGImage:highlightsSnapshot.CGImage] forKey:@"inputImage"];
-    
-    CIContext *context = [CIContext contextWithOptions:nil];
-    CGImageRef cgImage = [context createCGImage:filter.outputImage fromRect:filterImage.extent];
-    UIImage *renderedImage = [UIImage imageWithCGImage:cgImage];
-    self.renderedImageView.image = renderedImage;
-    
-    self.renderedImageView.hidden = NO;
-    self.highlightsView.hidden = YES;
-    }
-    if (handler){
-        handler();
-    }
+    if (handler) handler();
 }
 
 #pragma mark - RMImageCropperDelegate methods

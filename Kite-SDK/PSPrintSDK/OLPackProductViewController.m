@@ -30,7 +30,6 @@
 #import "NSObject+Utils.h"
 #import "OLAnalytics.h"
 #import "OLAsset+Private.h"
-#import "OLCheckoutDelegate.h"
 #import "OLCircleMaskCollectionViewCell.h"
 #import "OLConstants.h"
 #import "OLImagePickerViewController.h"
@@ -40,7 +39,6 @@
 #import "OLKiteUtils.h"
 #import "OLKiteViewController.h"
 #import "OLPackProductViewController.h"
-#import "OLPaymentViewController.h"
 #import "OLProduct.h"
 #import "OLProductPrintJob.h"
 #import "OLProductTemplate.h"
@@ -51,36 +49,14 @@
 #import "OLKiteViewController+Private.h"
 #import "UIView+RoundRect.h"
 
-@interface OLPaymentViewController (Private)
-
-- (void)saveAndDismissReviewController:(UIButton *)button;
-
-@end
-
-@interface OLPrintOrder (Private)
-
-- (void)saveOrder;
-
-@end
+@import Photobook;
 
 typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
     OLPackReviewStyleClassic,
     OLPackReviewStyleMini,
 };
 
-@interface OLProduct ()
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*declinedOffers;
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*acceptedOffers;
-@property (strong, nonatomic) OLUpsellOffer *redeemedOffer;
-@end
-
-@interface OLProductPrintJob ()
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*declinedOffers;
-@property (strong, nonatomic) NSMutableSet <OLUpsellOffer *>*acceptedOffers;
-@property (strong, nonatomic) OLUpsellOffer *redeemedOffer;
-@end
-
-@interface OLPackProductViewController () <OLCheckoutDelegate, UICollectionViewDelegateFlowLayout, OLInfoBannerDelegate, OLArtboardDelegate>
+@interface OLPackProductViewController () <UICollectionViewDelegateFlowLayout, OLInfoBannerDelegate, OLArtboardDelegate>
 
 @property (weak, nonatomic) OLAsset *editingAsset;
 @property (strong, nonatomic) UIView *addMorePhotosView;
@@ -108,6 +84,10 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    
+    if (@available(iOS 11.0, *)) {
+        self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    }
     
     [OLAnalytics trackReviewScreenViewed:self.product.productTemplate.name];
     
@@ -154,7 +134,7 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
         [self.ctaButton setBackgroundColor:[OLKiteABTesting sharedInstance].lightThemeColor1];
     }
     else{
-        [self.ctaButton setBackgroundColor:[UIColor colorWithRed:0.125 green:0.498 blue:0.655 alpha:1.000]];
+        [self.ctaButton setBackgroundColor:[UIColor colorWithRed:0 green:0.48 blue:1 alpha:1]];
     }
     [self.ctaButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
@@ -181,35 +161,14 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
     NSNumber *cornerRadius = [OLKiteABTesting sharedInstance].lightThemeButtonRoundCorners;
     if (cornerRadius){
         [self.ctaButton makeRoundRectWithRadius:[cornerRadius floatValue]];
+    } else {
+        [self.ctaButton makeRoundRectWithRadius:10];
     }
     
     [self.collectionView addSubview:self.ctaButton];
     
-    if ([OLKiteABTesting sharedInstance].launchedWithPrintOrder){
-        if ([[OLKiteABTesting sharedInstance].launchWithPrintOrderVariant isEqualToString:@"Review-Overview-Checkout"]){
-            [self.ctaButton setTitle:NSLocalizedStringFromTableInBundle(@"Next", @"KitePrintSDK", [OLKiteUtils kiteLocalizationBundle], @"") forState:UIControlStateNormal];
-        }
-    }
-    
-    if ([self.presentingViewController respondsToSelector:@selector(viewControllers)]) {
-        UIViewController *paymentVc = [(UINavigationController *)self.presentingViewController viewControllers].lastObject;
-        if ([paymentVc respondsToSelector:@selector(saveAndDismissReviewController:)]){
-            [self.ctaButton setTitle:NSLocalizedStringFromTableInBundle(@"Save", @"KitePrintSDK", [OLKiteUtils kiteLocalizationBundle], @"") forState:UIControlStateNormal];
-            [self.ctaButton removeTarget:self action:@selector(onButtonNextClicked:) forControlEvents:UIControlEventTouchUpInside];
-            [self.ctaButton addTarget:paymentVc action:@selector(saveAndDismissReviewController:) forControlEvents:UIControlEventTouchUpInside];
-        }
-    }
-    
     if ([OLUserSession currentSession].capitalizeCtaTitles){
         [self.ctaButton setTitle:[[self.ctaButton titleForState:UIControlStateNormal] uppercaseString] forState:UIControlStateNormal];
-    }
-}
-
-- (void)viewDidDisappear:(BOOL)animated{
-    [super viewDidDisappear:animated];
-    
-    if (!self.navigationController){
-        [OLAnalytics trackReviewScreenHitBack:self.product.productTemplate.name numberOfPhotos:[OLAsset userSelectedAssets].nonPlaceholderAssets.count];
     }
 }
 
@@ -230,15 +189,7 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
     
-    if ([self.presentingViewController respondsToSelector:@selector(viewControllers)]) {
-        UIViewController *presentingVc = [(UINavigationController *)self.presentingViewController viewControllers].lastObject;
-        if (![presentingVc isKindOfClass:[OLPaymentViewController class]]){
-            [self addBasketIconToTopRight];
-        }
-    }
-    else{
-        [self addBasketIconToTopRight];
-    }
+    [self addBasketIconToTopRight];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
@@ -317,35 +268,19 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
 
 - (void)saveJobWithCompletionHandler:(void(^)(void))handler{
     [self preparePhotosForCheckout];
+    NSArray<OLAsset *> *assets = [[OLAsset userSelectedAssets] nonPlaceholderAssets];
     
-    OLPrintOrder *printOrder = [OLUserSession currentSession].printOrder;
-    
-        BOOL fromEdit = NO;
-        OLProductPrintJob *job;
-        if (self.product.productTemplate.templateUI == OLTemplateUIDoubleSided){
-            job = [OLPrintJob postcardWithTemplateId:self.product.templateId frontImageOLAsset:[OLAsset userSelectedAssets].firstObject backImageOLAsset:[OLAsset userSelectedAssets].lastObject];
-        }
-        else{
-            job = [[OLProductPrintJob alloc] initWithTemplateId:self.product.templateId OLAssets:[NSArray arrayWithArray:[OLAsset userSelectedAssets]]];
-        }
-        NSArray *jobs = [NSArray arrayWithArray:printOrder.jobs];
-        for (id<OLPrintJob> existingJob in jobs){
-            if ([existingJob.uuid isEqualToString:self.product.uuid]){
-                job.dateAddedToBasket = [existingJob dateAddedToBasket];
-                job.extraCopies = existingJob.extraCopies;
-                [printOrder removePrintJob:existingJob];
-                fromEdit = YES;
-            }
-        }
-        [job.acceptedOffers addObjectsFromArray:self.product.acceptedOffers.allObjects];
-        [job.declinedOffers addObjectsFromArray:self.product.declinedOffers.allObjects];
-        job.redeemedOffer = self.product.redeemedOffer;
-        [printOrder addPrintJob:job];
-        if (!fromEdit){
-            [OLAnalytics trackItemAddedToBasket:job];
-        }
-    
-    [printOrder saveOrder];
+    id<Product> job;
+    if (self.product.productTemplate.supportsTextOnBorder) { // NOTE: There should be a better way to identify polaroid products
+        job = (id<Product>)[OLPrintJob polaroidWithTemplateId:self.product.templateId OLAssets:assets];
+    } else if (self.product.productTemplate.templateUI == OLTemplateUIDoubleSided) {
+        job = (id<Product>)[OLPrintJob postcardWithTemplateId:self.product.templateId frontImageOLAsset:assets.firstObject backImageOLAsset:assets.lastObject];
+    } else if (self.product.productTemplate.templateUI == OLTemplateUICalendar) {
+        job = (id<Product>)[OLPrintJob calendarWithTemplateId:self.product.productTemplate.identifier OLAssets:assets];
+    } else{
+        job = [[OLProductPrintJob alloc] initWithTemplateId:self.product.templateId OLAssets:assets];
+    }
+    [[PhotobookSDK shared] addProductToBasket:job];
     
     if (handler){
         handler();
@@ -355,27 +290,22 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
 - (void)doCheckout {
     [self saveJobWithCompletionHandler:NULL];
     
-    OLPrintOrder *printOrder = [OLUserSession currentSession].printOrder;
-    
-    if ([OLKiteABTesting sharedInstance].launchedWithPrintOrder && [[OLKiteABTesting sharedInstance].launchWithPrintOrderVariant isEqualToString:@"Review-Overview-Checkout"]){
-        UIViewController *vc = [self.storyboard instantiateViewControllerWithIdentifier:@"OLProductOverviewViewController"];
-        [vc safePerformSelector:@selector(setUserEmail:) withObject:[(OLKiteViewController *)vc userEmail]];
-        [vc safePerformSelector:@selector(setUserPhone:) withObject:[(OLKiteViewController *)vc userPhone]];
-        [vc safePerformSelector:@selector(setProduct:) withObject:self.product];
-        [self.navigationController pushViewController:vc animated:YES];
-    }
-    else{
-        [OLKiteUtils checkoutViewControllerForPrintOrder:printOrder handler:^(id vc){
-            [vc safePerformSelector:@selector(setUserEmail:) withObject:[OLKiteUtils userEmail:self]];
-            [vc safePerformSelector:@selector(setUserPhone:) withObject:[OLKiteUtils userPhone:self]];
-            
-            [self.navigationController pushViewController:vc animated:YES];
-        }];
-    }
+    UIViewController *checkoutVc = [[PhotobookSDK shared] checkoutViewControllerWithEmbedInNavigation:NO dismissClosure:^(UIViewController *viewController, BOOL success){
+        if (![OLUserSession currentSession].kiteVc){
+            [viewController dismissViewControllerAnimated:YES completion:NULL];
+        }
+        else if ([viewController isKindOfClass:[NSClassFromString(@"Photobook.PhotobookViewController") class]]){
+            [viewController.navigationController popViewControllerAnimated:YES];
+        } else {
+            [viewController.navigationController popToRootViewControllerAnimated:YES];
+        }
+    }];
+    UIViewController *firstController = self.navigationController.viewControllers.firstObject;
+    [self.navigationController setViewControllers:@[firstController, checkoutVc] animated:YES];
+    [[OLUserSession currentSession] resetUserSelectedPhotos];
 }
 
 - (void) deletePhotoAtIndex:(NSUInteger)index{
-    [OLAnalytics trackReviewScreenDeletedPhotoForProductName:self.product.productTemplate.name];
     [[OLAsset userSelectedAssets] removeObjectAtIndex:index];
     
     if ([OLAsset userSelectedAssets].nonPlaceholderAssets.count == 0){
@@ -416,8 +346,6 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
     [countLabel setText: [NSString stringWithFormat:@"%lu", (unsigned long)extraCopies + 1]];
     
     [self updateTitleBasedOnSelectedPhotoQuanitity];
-    
-    [OLAnalytics trackReviewScreenIncrementedPhotoQtyForProductName:self.product.productTemplate.name];
 }
 
 - (IBAction)onButtonDownArrowClicked:(UIButton *)sender {
@@ -444,9 +372,7 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
     UILabel* countLabel = (UILabel *)[cellContentView viewWithTag:30];
     [countLabel setText: [NSString stringWithFormat:@"%lu", (unsigned long)extraCopies + 1]];
     
-    [self updateTitleBasedOnSelectedPhotoQuanitity];
-    
-    [OLAnalytics trackReviewScreenDecrementedPhotoQtyForProductName:self.product.productTemplate.name];
+    [self updateTitleBasedOnSelectedPhotoQuanitity];    
 }
 
 - (void)editPhoto:(UIButton *)sender {
@@ -470,16 +396,23 @@ typedef NS_ENUM(NSUInteger, OLPackReviewStyle) {
 }
 
 - (void)preparePhotosForCheckout{
-    NSMutableArray *checkoutPhotos = [[NSMutableArray alloc] init];
-    [checkoutPhotos addObjectsFromArray:[[OLAsset userSelectedAssets] nonPlaceholderAssets]];
-    for (int i = 0; i < [OLAsset userSelectedAssets].nonPlaceholderAssets.count; i++) {
-        NSInteger numberOfCopies = [[[OLAsset userSelectedAssets] objectAtIndex:i] extraCopies];
-        for (NSInteger j = 0; j < numberOfCopies; j++){
-            [checkoutPhotos addObject:[[OLAsset userSelectedAssets] objectAtIndex:i]];
+    NSArray<OLAsset *> *assets = [[OLAsset userSelectedAssets] nonPlaceholderAssets];
+    
+    NSInteger numOrders = 1 + (MAX(0, assets.count - 1 + [self totalNumberOfExtras]) / self.product.quantityToFulfillOrder);
+    NSInteger quantityToFulfilOrder = numOrders * self.product.quantityToFulfillOrder;
+    NSInteger totalItems = assets.count + [self totalNumberOfExtras];
+    
+    NSInteger additionalCopies = quantityToFulfilOrder - totalItems;
+    if (additionalCopies > 0) {
+        NSInteger assetIndex = 0;
+        for (NSInteger i = 0; i < additionalCopies; i++) {
+            assets[assetIndex].extraCopies = assets[assetIndex].extraCopies + 1;
+            ++assetIndex;
+            if (assetIndex == assets.count) {
+                assetIndex = 0;
+            }
         }
-        [OLAsset userSelectedAssets][i].extraCopies = 0;
-    }
-    [OLUserSession currentSession].userSelectedAssets = checkoutPhotos;
+    }    
 }
 
 #pragma mark UICollectionView data source and delegate methods
