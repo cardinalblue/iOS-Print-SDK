@@ -281,7 +281,6 @@
 		2ED2B7B41DB8B4D90036B536 /* OLHPSDKWrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 2ED2B7B21DB8B4D90036B536 /* OLHPSDKWrapper.h */; };
 		2ED2B7B51DB8B4D90036B536 /* OLHPSDKWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 2ED2B7B31DB8B4D90036B536 /* OLHPSDKWrapper.m */; };
 		2EE04A041EEAE12600E6A16B /* OLArtboardTemplate.h in Headers */ = {isa = PBXBuildFile; fileRef = 2E37B1791D227EDA003DAA84 /* OLArtboardTemplate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		2EEAEF3D1ECDA1B700C40B71 /* mug.scn in Resources */ = {isa = PBXBuildFile; fileRef = 2EEAEF3C1ECDA12300C40B71 /* mug.scn */; };
 		2EEF0D011D9964C600C81086 /* OLCustomImagePickerViewControllerDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EEF0D001D9964C600C81086 /* OLCustomImagePickerViewControllerDelegate.h */; };
 		2EEF0D0C1D9A781700C81086 /* OLCustomPickerController.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EEF0D0B1D9A781700C81086 /* OLCustomPickerController.h */; };
 		6FE9754F223FC654008BACA2 /* OLAPIClient.h in Headers */ = {isa = PBXBuildFile; fileRef = 6FE9754D223FC654008BACA2 /* OLAPIClient.h */; };
@@ -1501,7 +1500,6 @@
 			files = (
 				2EBDF4CE1E434A0B004775BD /* OLKiteLocalizationResources.bundle in Resources */,
 				2E451E931D9564140080F1C1 /* kite_corrupt.jpg in Resources */,
-				2EEAEF3D1ECDA1B700C40B71 /* mug.scn in Resources */,
 				2E451E951D9564620080F1C1 /* OLKiteStoryboard.storyboard in Resources */,
 				2E8E19B91E93E0BF0003905E /* OLHintView.xib in Resources */,
 				2E451E941D95641A0080F1C1 /* OLEditingToolsView.xib in Resources */,
